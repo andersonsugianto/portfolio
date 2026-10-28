@@ -1,0 +1,9 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="75" height="11" viewBox="0 0 75 11" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Level dots">
+<circle id="Dot" cx="5.5" cy="5.5" r="5.5" fill="#0E2A2F"/>
+<circle id="Dot_2" cx="21.5" cy="5.5" r="5.5" fill="#0E2A2F"/>
+<circle id="Dot_3" cx="37.5" cy="5.5" r="5.5" fill="#0E2A2F"/>
+<circle id="Dot_4" cx="53.5" cy="5.5" r="5.5" fill="#0E2A2F"/>
+<path id="Dot_5" d="M74.5 5.5C74.5 8.26142 72.2614 10.5 69.5 10.5C66.7386 10.5 64.5 8.26142 64.5 5.5C64.5 2.73858 66.7386 0.5 69.5 0.5C72.2614 0.5 74.5 2.73858 74.5 5.5Z" stroke="#0E2A2F"/>
+</g>
+</svg>

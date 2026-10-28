@@ -1,0 +1,1006 @@
+/* Design tokens (from Figma variables) */
+:root {
+  --bg-page: #f3f8f8;
+  --bg-surface: #ffffff;
+  --bg-placeholder: #d3dfe0;
+  --text-primary: #0e2a2f;
+  --text-green: #1f8a5b;
+  --text-olive: #7d6a24;
+  --accent-teal: #0f7a86;
+  --tint-teal: #d6eef0;
+  --tint-green: #dcefe4;
+  --tint-blue: #e1e8f7;
+  --tint-sand: #f3ecd8;
+  --tint-tape: #d9e9e6;
+
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-hand: "Caveat", cursive;
+
+  /* Size of small UI text relative to the Figma design (1 = Figma size) */
+  --s: 0.8;
+  /* Shared content width and side padding (navbar, sections, footer) */
+  --container: 1200px;
+  --pad: clamp(24px, 4.5vw, 64px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html {
+  touch-action: pan-x pan-y; /* no pinch or double-tap zoom on touch screens */
+  overflow-x: clip;
+  scroll-padding-top: 64px; /* anchor links (and snap points) land right below the fixed 64px navbar */
+  /* Each section is a resting point: a small scroll springs back, a firmer one moves on.
+     Sections taller than the window (pinned Education, stacked Skills on phones) still scroll freely inside. */
+  scroll-snap-type: y mandatory;
+}
+.main > section { scroll-snap-align: start; }
+.hero { scroll-margin-top: 200px; } /* the hero's resting point is the very top of the page */
+.footer { scroll-snap-align: end; } /* so the very bottom of the page is still reachable */
+body {
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-variation-settings: "opsz" 14;
+  line-height: normal;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+ul { list-style: none; }
+img { display: block; -webkit-user-drag: none; user-select: none; -webkit-touch-callout: none; } /* no drag-out or iPhone "Save Image" menu */
+h1, h2, h3 { font-weight: 400; }
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+[hidden] { display: none !important; }
+
+.m-only { display: none !important; }
+
+/* Bounding box of a rotated element (as Figma reports it); child is centered and rotated */
+.rot {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rot > * { flex: none; }
+
+/* =========================================================
+   PAGE CONTAINER — max 1200px of content, centered.
+   Extra width on big screens becomes equal margin on both sides.
+   ========================================================= */
+.page {
+  max-width: calc(var(--container) + 2 * var(--pad));
+  margin: 0 auto;
+  padding: 0 var(--pad);
+}
+
+/* Nav */
+.nav {
+  display: flex;
+  flex-direction: column;
+}
+/* The page navbar stays at the top while scrolling */
+.page > .nav {
+  position: sticky;
+  top: 0;
+  z-index: 5; /* below the phone menu overlay (10) */
+  background: var(--bg-page);
+  /* extend the background to the window edges (a shadow doesn't widen the page) */
+  box-shadow: 0 0 0 100vmax var(--bg-page);
+  clip-path: inset(0 -100vmax);
+}
+.nav-bar {
+  min-height: 64px; /* navbar height on every screen size; the divider sits right under it */
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+.nav-bar > .btn { justify-self: end; }
+.logo {
+  justify-self: start;
+  font-family: var(--font-serif);
+  font-size: 32px; /* same on desktop and phone */
+  white-space: nowrap;
+}
+.nav-links {
+  display: flex;
+  gap: clamp(24px, 3.9vw, 45px);
+  font-size: calc(20px * var(--s));
+  font-weight: 500;
+}
+.nav-links a { white-space: nowrap; }
+/* link for the section currently on screen (set by script.js) */
+.nav-links a.is-active,
+.menu-links a.is-active .menu-text {
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.3em;
+}
+.divider {
+  display: block;
+  width: 100%;
+  height: 0;
+  border: 0;
+  border-top: 1px solid var(--text-primary);
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  background: var(--text-primary);
+}
+.icon-btn img { width: 20px; height: 20px; }
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(15px * var(--s)) calc(20px * var(--s));
+  border-radius: 25px;
+  font-size: calc(20px * var(--s));
+  font-weight: 500;
+  white-space: nowrap;
+}
+.btn-dark { background: var(--text-primary); color: var(--bg-surface); }
+.btn-outline { border: 1px solid var(--text-primary); }
+/* Hover (and keyboard focus): underlined text */
+.btn:hover,
+.btn:focus-visible {
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.2em;
+}
+
+/* Main — a size container, so sections can scale artwork with its width */
+.main {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+}
+/* Every section fills the screen below the navbar with its content centred,
+   so only one section is in view at a time (taller sections simply grow) */
+.main > section {
+  min-height: calc(100vh - 64px);
+  min-height: calc(100svh - 64px);
+  padding-block: clamp(32px, 4vw, 56px);
+  --u: calc(100cqw / 1200); /* one "design pixel" at full 1200px content width (shrinks with the container) */
+}
+
+/* Section headings */
+.section-title {
+  font-family: var(--font-serif);
+  font-size: clamp(36px, 4.45vw, 64px);
+  line-height: 1.1;
+}
+.section-title.centered { text-align: center; }
+.education, .skills, .projects, .contact {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* centred vertically in the full-screen section */
+  gap: clamp(32px, 5vw, 72px);
+}
+
+/* =========================================================
+   HERO — text lines up with the logo, polaroid with Contact Me
+   ========================================================= */
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(32px, 7vw, 120px);
+}
+.intro {
+  order: -1;
+  flex: 0 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(14px, 1.6vw, 20px);
+}
+.hero-title {
+  font-family: var(--font-serif);
+  font-size: clamp(44px, 5.56vw, 80px);
+  line-height: 1;
+}
+.hero-title em { font-style: italic; white-space: nowrap; }
+.hero-sub {
+  font-size: clamp(18px, 1.95vw, 28px);
+  font-style: italic;
+  letter-spacing: -0.04em;
+}
+.hero-buttons { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* Polaroid: one picture exported from Figma (366×529 incl. its shadow); --pu is one Figma pixel */
+.polaroid-wrap {
+  --pu: clamp(0.5px, calc(var(--u) * 0.8), 0.8px);
+  position: relative;
+  flex: none;
+  width: calc(366 * var(--pu));
+  height: calc(529 * var(--pu));
+}
+.polaroid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* =========================================================
+   ABOUT — passport lines up with the logo, text with Contact Me
+   ========================================================= */
+.about {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(32px, 5.5vw, 80px);
+}
+/* Passport: one picture exported from Figma (blob, passport and doodles together).
+   The box is the passport itself (686.924×449.64 units); the picture's soft glow spills past it. */
+.passport-wrap {
+  --ppu: clamp(0.4px, calc(var(--u) * 0.8), 0.8px);
+  position: relative;
+  flex: none;
+  width: calc(686.924 * var(--ppu));
+  height: calc(449.64 * var(--ppu));
+}
+.passport {
+  position: absolute;
+  left: calc(-105.00 * var(--ppu));
+  top: calc(-104.40 * var(--ppu));
+  width: calc(924.20 * var(--ppu));
+  height: calc(663.79 * var(--ppu));
+  max-width: none;
+}
+
+.about-text {
+  flex: 0 1 440px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 2vw, 24px);
+  text-align: right;
+}
+.about-text p {
+  font-size: clamp(15px, 1.39vw, 20px);
+  line-height: 1.6;
+  /* justified; the last line lines up right, under the right-aligned heading */
+  text-align: justify;
+  text-align-last: right;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+}
+.about-text strong { font-weight: 700; }
+
+/* =========================================================
+   EDUCATION — shared card styles (layout per breakpoint below)
+   ========================================================= */
+.edu-stop.hs    { --card-w: 264; --card-min: 180px; --card-rot: 3deg;  --tape-cx: 127.9; --tape-cy: -6.2; --tape-rot: 4deg; }
+.edu-stop.herts { --card-w: 348; --card-min: 220px; --card-rot: -3deg; --tape-cx: 166;   --tape-cy: -4.65; --tape-rot: 5deg; }
+.edu-stop.sun   { --card-w: 348; --card-min: 220px; --card-rot: 3deg;  --tape-cx: 169.7; --tape-cy: 0.75; --tape-rot: 3deg; }
+.edu-card-wrap { position: relative; }
+.edu-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 25px;
+  background: var(--bg-surface);
+  filter: drop-shadow(5px 5px 15px rgba(0, 0, 0, 0.25));
+}
+.edu-card.teal { background: var(--tint-teal); }
+.edu-date {
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent-teal);
+}
+.edu-title { font-family: var(--font-serif); line-height: 1.08; }
+.edu-school { font-weight: 500; line-height: 1.5; }
+.tape {
+  position: absolute;
+  background: var(--tint-tape);
+  transform: translate(-50%, -50%) rotate(var(--tape-rot));
+}
+
+/* =========================================================
+   SKILLS
+   ========================================================= */
+.skill-cards {
+  display: grid;
+  grid-template-columns: 642fr 606fr;
+  gap: clamp(16px, 2.2vw, 32px);
+  align-items: start;
+}
+.ach-col { display: flex; flex-direction: column; gap: 24px; }
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: calc(15px * var(--s));
+  padding: clamp(22px, 2.1vw, 30px);
+  border-radius: 25px;
+}
+.card-skills, .card-lang { align-self: stretch; }
+.tint-teal { background: var(--tint-teal); }
+.tint-green { background: var(--tint-green); }
+.tint-blue { background: var(--tint-blue); }
+.tint-sand { background: var(--tint-sand); }
+.eyebrow {
+  font-size: calc(20px * var(--s));
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--accent-teal);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(10px * var(--s));
+}
+.chips li {
+  padding: calc(15px * var(--s)) calc(20px * var(--s));
+  border-radius: 25px;
+  background: var(--bg-surface);
+  font-size: calc(20px * var(--s));
+  font-weight: 500;
+  white-space: nowrap;
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: calc(15px * var(--s));
+}
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(5px * var(--s)) 0;
+}
+.item.tight { padding: 0; }
+.item.bordered { border-bottom: 1px solid var(--text-primary); }
+.item.ccna { flex-direction: column; align-items: flex-start; gap: 0; padding-bottom: calc(5px * var(--s)); }
+.item-date {
+  font-size: calc(20px * var(--s));
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.item-date.green { color: var(--text-green); }
+.item-date.olive { color: var(--text-olive); }
+.item-title {
+  font-family: var(--font-serif);
+  font-size: calc(30px * var(--s));
+  white-space: nowrap;
+}
+.item-title.scholarship { width: calc(359px * var(--s)); white-space: normal; }
+.badge {
+  flex: none;
+  padding: calc(5px * var(--s)) calc(15px * var(--s));
+  border-radius: 25px;
+  background: var(--bg-surface);
+  font-size: calc(20px * var(--s));
+  font-weight: 500;
+  white-space: nowrap;
+}
+.level {
+  display: flex;
+  align-items: center;
+  gap: calc(10px * var(--s));
+  font-size: max(12px, calc(15px * var(--s)));
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+.level img { width: calc(75px * var(--s)); height: calc(11px * var(--s)); }
+.squiggle { margin-left: 14px; width: min(100%, calc(629px * var(--s))); height: auto; }
+
+/* =========================================================
+   PROJECTS
+   ========================================================= */
+.project-list {
+  display: flex;
+  justify-content: center;
+  gap: clamp(20px, 2.5vw, 30px);
+}
+/* Skills grid, project pair and contact card share one width (set per screen size below) */
+.skill-cards, .project-list, .contact-panel {
+  width: 100%;
+  max-width: var(--cards-w, none);
+  margin-inline: auto;
+}
+.project { flex: 1 1 0; min-width: 0; }
+.thumb {
+  width: 100%;
+  aspect-ratio: 400 / 360;
+  border-radius: 25px;
+  background: var(--bg-placeholder);
+  object-fit: cover; /* fills the card shape; the photo card shows the whole picture */
+  cursor: pointer;
+}
+.project-info {
+  display: flex;
+  flex-direction: column;
+  gap: calc(8px * var(--s));
+  margin-top: 16px;
+}
+.project-tag { font-size: calc(20px * var(--s)); font-weight: 700; letter-spacing: 0.05em; }
+.project-title { font-family: var(--font-serif); font-size: clamp(24px, 1.95vw, 28px); }
+.project-link {
+  font-size: calc(20px * var(--s));
+  font-weight: 600;
+  text-decoration: underline;
+  align-self: flex-start;
+}
+
+/* Project photo card (a <dialog>, opened by View Project) */
+.project-modal {
+  margin: auto;
+  width: min(720px, calc(100% - 2 * var(--pad)));
+  max-height: calc(100% - 48px);
+  padding: 0;
+  border: 0;
+  border-radius: 25px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  overflow: auto;
+}
+.project-modal::backdrop { background: rgba(14, 42, 47, 0.6); }
+.project-modal-card { position: relative; }
+.project-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1;
+}
+/* the whole picture at its own shape, at most 65% of the window tall */
+.project-modal-photo {
+  display: flex;
+  justify-content: center;
+  min-height: 200px;
+  background: var(--bg-page);
+}
+.project-modal-photo img {
+  width: 100%;
+  height: auto;
+  max-height: 65vh;
+  object-fit: contain;
+}
+.project-modal-info {
+  display: flex;
+  flex-direction: column;
+  gap: calc(8px * var(--s));
+  padding: clamp(20px, 3vw, 32px);
+}
+body.modal-open { overflow: hidden; }
+
+/* =========================================================
+   CONTACT
+   ========================================================= */
+.contact-panel {
+  display: flex;
+  align-items: center;
+  gap: clamp(24px, 3vw, 40px);
+  padding: clamp(24px, 3vw, 40px);
+  border-radius: 25px; /* same roundness as the other cards */
+  background: var(--bg-surface);
+}
+.invite {
+  flex: 0 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(22px * var(--s));
+}
+.invite-title {
+  font-family: var(--font-serif);
+  font-size: clamp(28px, 2.67vw, 38px);
+  line-height: 1.05;
+}
+.invite-body { font-size: max(14px, calc(17px * var(--s))); line-height: 1.55; }
+.invite-buttons { display: flex; flex-wrap: wrap; gap: 12px; }
+.invite-buttons .btn-outline { background: var(--bg-surface); } /* white only in the contact card */
+.contact-cards {
+  flex: 1 1 0;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.contact-card {
+  display: flex;
+  flex-direction: column;
+  gap: calc(14px * var(--s));
+  padding: calc(22px * var(--s));
+  border-radius: 22px;
+  background: var(--bg-surface);
+  min-width: 0;
+}
+.icon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(44px * var(--s));
+  height: calc(44px * var(--s));
+  border-radius: 999px;
+  font-size: max(12px, calc(15px * var(--s)));
+  font-weight: 700;
+}
+.icon img { width: calc(22px * var(--s)); height: calc(22px * var(--s)); }
+.details { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.label {
+  font-size: max(12px, calc(15px * var(--s))); /* same as the other small labels (NATIVE, dates) */
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-teal);
+}
+.value { font-size: calc(20px * var(--s)); font-weight: 500; overflow-wrap: break-word; } /* same as chips, badges and buttons */
+
+/* =========================================================
+   FOOTER — a Back to top link on the right, same height as the navbar
+   ========================================================= */
+.footer {
+  display: flex;
+  flex-direction: column;
+}
+.footer-bar {
+  min-height: 64px; /* same height as the navbar */
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+.back-to-top {
+  font-size: calc(18px * var(--s));
+  font-weight: 600;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   MOBILE MENU overlay (opened from the hamburger below 768px)
+   ========================================================= */
+.menu {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 40px;
+  padding: 0 var(--pad) 32px;
+  background: var(--bg-page);
+  overflow-y: auto;
+}
+.menu-links { display: flex; flex-direction: column; }
+.menu-links a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(14px * var(--s)) 0;
+  border-bottom: 1px solid var(--text-primary);
+}
+.menu-label { display: flex; align-items: baseline; gap: 14px; white-space: nowrap; }
+.menu-text { font-family: var(--font-serif); font-size: calc(44px * var(--s)); line-height: 1.1; }
+.menu-links img { width: calc(22px * var(--s)); height: calc(22px * var(--s)); }
+.menu-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+}
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+.menu-buttons .btn { width: 100%; }
+.menu-socials {
+  display: flex;
+  gap: 20px;
+  font-size: calc(20px * var(--s));
+  font-weight: 600;
+}
+.menu-socials a { text-decoration: underline; }
+body.menu-open { overflow: hidden; }
+
+/* =========================================================
+   768px AND UP — education drawn along the dotted path
+   (every position is a multiple of --u2 = one pixel of the 1280px Figma artwork)
+   ========================================================= */
+@media (min-width: 768px) {
+  .education {
+    --u2: calc(100cqw / 1280);
+    /* the artwork's top 70 Figma px are empty, so everything is drawn 70px higher (closer to the heading) */
+    --edu-shift: 70;
+    --edu-h: calc((748 - var(--edu-shift)) * var(--u2)); /* stage height */
+    display: block;
+  }
+  .edu-stage {
+    position: relative;
+    height: var(--edu-h);
+  }
+  .timeline, .edu-stop { display: contents; }
+
+  /* inline SVG with the dotted path, its reveal mask and the plane (1280×748 Figma coordinates) */
+  .edu-svg {
+    position: absolute;
+    left: 0;
+    top: calc(var(--edu-shift) * -1 * var(--u2));
+    width: 100%;
+    height: calc(748 * var(--u2));
+    overflow: visible;
+    pointer-events: none;
+  }
+
+
+  .edu-stop.hs {
+    --dot-x: 117; --dot-y: 650.15;
+    --box-x: 4.93; --box-y: 411.85; --box-w: 270.704; --box-h: 148.632;
+  }
+  .edu-stop.herts {
+    --dot-x: 597; --dot-y: 520.15;
+    --box-x: 477; --box-y: 595; --box-w: 354.588; --box-h: 153.028;
+  }
+  .edu-stop.sun {
+    --dot-x: 1037; --dot-y: 390.15;
+    --box-x: 794.93; --box-y: 176; --box-w: 354.588; --box-h: 153.028;
+  }
+  .edu-dot {
+    position: absolute;
+    left: calc(var(--dot-x) * var(--u2));
+    top: calc((var(--dot-y) - var(--edu-shift)) * var(--u2));
+    width: calc(24 * var(--u2));
+    height: calc(24 * var(--u2));
+  }
+  .edu-box {
+    left: calc(var(--box-x) * var(--u2));
+    top: calc((var(--box-y) - var(--edu-shift)) * var(--u2));
+    width: calc(var(--box-w) * var(--u2));
+    height: calc(var(--box-h) * var(--u2));
+  }
+  .edu-card-wrap { transform: rotate(var(--card-rot)); }
+  .edu-card {
+    width: max(var(--card-min), calc(var(--card-w) * 0.8 * var(--u2)));
+    gap: max(6px, calc(8 * var(--u2)));
+    padding: max(12px, calc(16 * var(--u2)));
+  }
+  .edu-date, .edu-school { font-size: max(11px, calc(12 * var(--u2))); }
+  .edu-title { font-size: max(17px, calc(24 * var(--u2))); }
+  .tape {
+    left: calc(var(--tape-cx) * 0.8 * var(--u2));
+    top: calc(var(--tape-cy) * 0.8 * var(--u2));
+    width: calc(72 * var(--u2));
+    height: calc(20.8 * var(--u2));
+  }
+}
+
+/* =========================================================
+   1024px AND UP — Skills fits on one screen
+   (tighter spacing here; script.js scales the card grid down further if the window is short)
+   ========================================================= */
+@media (min-width: 1024px) {
+  .skills { gap: clamp(20px, 3.5vh, 48px); }
+  :root { --cards-w: 880px; } /* Skills, Projects and Contact cards: narrower than the navbar, centred */
+  .skill-cards { gap: 20px; }
+  .ach-col { gap: 16px; }
+  .squiggle { width: min(100%, 400px); }
+}
+
+/* =========================================================
+   BELOW 1024px — sections that need width stack up
+   ========================================================= */
+@media (max-width: 1023px) {
+  .wide-only { display: none !important; }
+
+  /* Skills: one column */
+  :root { --cards-w: 600px; } /* tablets: Skills, Projects and Contact stay a comfortable width, centred */
+  .skill-cards {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .ach-col { display: contents; }
+
+  /* Contact (tablets and phones): just the contact rows, with the buttons centred underneath */
+  .contact-panel { flex-direction: column; align-items: stretch; }
+  .invite { display: contents; }
+  .invite-title,
+  .invite-body { display: none; }
+  .invite-buttons { order: 1; justify-content: center; }
+}
+
+/* =========================================================
+   BELOW 768px — phone layout (Figma frame: 390 wide)
+   Everything stacks in one centered column; the menu replaces the nav links.
+   ========================================================= */
+@media (max-width: 767px) {
+  :root {
+    --s: 0.85;
+    /* width of the education timeline; skills and project cards use it too so they line up */
+    --phone-col: 420px; /* grows with the screen up to this width */
+    /* Skills, projects and the contact card: a little narrower than the screen, centred
+       (at most 470px, and always at least 12px in from the page padding on each side) */
+    --cards-w: min(470px, 100% - 24px);
+  }
+
+  .page { padding: 0 var(--pad); overflow-x: clip; } /* the passport's soft glow can't widen the page */
+  .d-only { display: none !important; }
+  .m-only { display: flex !important; }
+
+  /* Nav: logo left, hamburger right (same 72px bar as desktop) */
+  .nav-bar {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .section-title { font-size: calc(44px * var(--s)); }
+  .education, .skills, .projects, .contact { gap: 32px; }
+
+  /* Hero: text on top, photo below, both centered */
+  .hero {
+    flex-direction: column;
+    justify-content: center;
+    gap: 36px;
+  }
+  .intro {
+    width: 100%;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+  }
+  .hero-title { font-size: calc(56px * var(--s)); }
+  .hero-title em { white-space: normal; }
+  .hero-sub { font-size: calc(22px * var(--s)); line-height: 1.3; letter-spacing: -0.03em; }
+  .hero-buttons { justify-content: center; gap: 10px; }
+  /* smaller buttons on phones (hero and contact) */
+  .hero-buttons .btn,
+  .invite-buttons .btn { padding: 10px 16px; font-size: 15px; }
+  .polaroid-wrap { --pu: 0.527px; }
+
+  /* About: heading, then passport, then the paragraph */
+  /* passport scales so its visible width matches the phone column (686.924 = passport box width) */
+  .about { --ppu-phone: calc(min(100cqw, var(--phone-col)) / 686.924); flex-direction: column; justify-content: center; gap: 32px; }
+  .passport-wrap { --ppu: var(--ppu-phone); align-self: center; }
+  .about-text { display: contents; text-align: center; }
+  .about-text .section-title { order: -1; align-self: stretch; }
+  /* paragraph is exactly as wide as the (tilted) passport above it */
+  .about-text p {
+    align-self: center;
+    width: 100%;
+    max-width: calc(686.924 * var(--ppu-phone));
+    font-size: calc(17px * var(--s));
+    /* justified edge to edge like the passport; hyphenation keeps word gaps even */
+    text-align: justify;
+    text-align-last: auto;
+    -webkit-hyphens: auto;
+    hyphens: auto;
+  }
+
+  /* Education: vertical timeline */
+  .edu-wide { display: none !important; }
+  .edu-stage { display: contents; }
+  .timeline {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+    /* shared phone column: just wide enough for the longest card text, centered */
+    width: fit-content; /* cards are only as wide as their longest line (no empty space) */
+    max-width: min(100%, var(--phone-col));
+    margin: 0 auto;
+    padding-top: 14px;
+  }
+  .edu-stop {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  /* tape centers are in screen px from the card's top-left */
+  .edu-stop.hs, .edu-stop.sun { --tape-cx: 72.3; --tape-cy: -0.7; --tape-rot: 3deg; }
+  .edu-stop.herts { --tape-cx: 73.6; --tape-cy: -5.4; --tape-rot: -3deg; }
+  .edu-dot { position: relative; z-index: 1; flex: none; width: 24px; height: 24px; margin: -4px; }
+  /* Dotted line drawn only between stops: from the first dot to the last dot */
+  .edu-stop::before,
+  .edu-stop::after {
+    content: "";
+    position: absolute;
+    left: 6px;
+    width: 4px;
+    background: radial-gradient(circle, var(--text-primary) 0.9px, transparent 1.3px) 50% 0 / 4px 7px repeat-y;
+  }
+  .edu-stop::before { top: 0; height: 50%; }
+  .edu-stop::after { top: 50%; height: calc(50% + 36px); }
+  .edu-stop.hs::before,
+  .edu-stop.sun::after { content: none; }
+  .edu-box {
+    position: relative;
+    flex: 1 0 0;
+    min-width: 0;
+    display: block;
+  }
+  .edu-card {
+    width: 100%;
+    gap: calc(10px * var(--s));
+    padding: calc(20px * var(--s));
+  }
+  .edu-date, .edu-school { font-size: max(12px, calc(15px * var(--s))); }
+  .edu-title { font-size: calc(30px * var(--s)); }
+  .tape {
+    left: calc(var(--tape-cx) * 1px);
+    top: calc(var(--tape-cy) * 1px);
+    width: calc(90px * var(--s));
+    height: calc(26px * var(--s));
+  }
+
+  /* Skills: stacked items */
+  .card { padding: 22px; }
+  .chips { gap: 8px; }
+  .chips li { padding: calc(8px * var(--s)) calc(14px * var(--s)); }
+  .stack-list { gap: 18px; }
+  .item.stack {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px; /* space between the title and its badge */
+  }
+  .item.stack.bordered { padding-bottom: 12px; } /* space between the badge and the line */
+  .item.ccna { gap: 8px; }
+  .item-date { white-space: normal; }
+  .stack .item-title { white-space: normal; }
+  .item-title.scholarship { width: auto; }
+
+  /* Projects: one per row */
+  .project-list { flex-direction: column; gap: 40px; }
+  .project {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .thumb { aspect-ratio: auto; height: calc(300px * var(--s)); border-radius: 20px; }
+  .project-info { margin-top: 0; }
+
+  /* Contact: one contact row per line */
+  .contact-panel { gap: 24px; padding: 24px; }
+  .invite-buttons { gap: 10px; }
+  .contact-cards { grid-template-columns: 1fr; gap: 12px; }
+  .contact-card {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+  }
+
+  /* Project photo card: smaller on phones */
+  .project-modal { width: min(320px, calc(100% - 2 * var(--pad))); border-radius: 20px; }
+  .project-modal-close { top: 10px; right: 10px; width: 36px; height: 36px; }
+  .project-modal-close img { width: 16px; height: 16px; }
+  .project-modal-info { padding: 16px; }
+}
+
+
+/* =========================================================
+   ANIMATIONS
+   Hidden start states only apply when JS is running (html.js, set in <head>)
+   and the visitor hasn't asked for reduced motion, so nothing flashes and
+   nothing stays hidden if scripts fail. Only transform and opacity animate.
+   ========================================================= */
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  /* About slide distance: 80px, but never more than the empty space beside the content
+     (so the sliding text can't stick out past the window and cause sideways scrolling) */
+  --reveal-x: min(80px, max(calc(var(--pad) - 4px), calc((100vw - 1200px) / 2 - 12px)));
+  --reveal-y: 30px;   /* Skills / Projects fade-up distance */
+}
+@media (max-width: 767px) {
+  :root { --reveal-y: 20px; } /* shorter travel on phones (--reveal-x already shrinks with --pad) */
+}
+
+/* ---------- Hero: swinging Polaroid (pivots on the pin) ---------- */
+@keyframes polaroid-sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50%      { transform: rotate(3deg); }
+}
+/* ---------- Hero: typing caret ---------- */
+@keyframes caret-blink { 50% { opacity: 0; } }
+
+.type { position: relative; display: inline-block; }
+.type-live {
+  position: absolute;
+  inset: 0;
+  white-space: inherit;
+  text-align: left; /* letters appear where they'll end up, left to right */
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* pivot on the pin's centre in the exported picture */
+  .polaroid {
+    transform-origin: 54.2% 8%;
+    animation: polaroid-sway 3.6s ease-in-out infinite;
+  }
+
+  /* typing: the ghost keeps the space, the live copy is typed over it */
+  .js .type-ghost { visibility: hidden; }
+  .js .type-live::after {
+    content: "";
+    display: inline-block;
+    width: 0.06em;
+    height: 0.8em;
+    margin-left: 0.04em;
+    margin-right: -0.1em; /* the caret takes no space, so it never wraps onto a new line */
+    vertical-align: -0.05em;
+    background: currentColor;
+    animation: caret-blink 1s steps(1) infinite;
+    transition: opacity 0.4s ease;
+  }
+  .js .type.is-done .type-live::after { opacity: 0; animation: none; }
+
+  /* ---------- Generic reveal (Hero extras, About, Skills, Projects) ---------- */
+  .js [data-reveal] {
+    opacity: 0;
+    transition:
+      opacity 0.6s ease-out var(--delay, 0ms),
+      transform 0.8s var(--ease-out) var(--delay, 0ms);
+  }
+  .js [data-reveal="up"]    { transform: translateY(var(--reveal-y)); }
+  .js [data-reveal="left"]  { transform: translateX(calc(-1 * var(--reveal-x))); }
+  .js [data-reveal="right"] { transform: translateX(var(--reveal-x)); }
+  .js [data-reveal="fade"]  { transform: none; }
+  .js .intro [data-reveal="up"] { transform: translateY(12px); } /* hero extras rise only a little */
+  .js .is-in [data-reveal],
+  .js [data-reveal].is-in { opacity: 1; transform: none; }
+
+  /* ---------- Education (768px+): scroll-driven plane ---------- */
+  @media (min-width: 768px) {
+    /* the section becomes a scroll track; the stage stays pinned while the plane flies */
+    /* 100vh of scrolling for the flight, plus 50vh to pause on the finished timeline */
+    .js .education.is-scrubbed {
+      height: calc(var(--edu-h) + 150vh);
+      padding-block: 0;
+      /* snap (and section links) land exactly where the stage pins, so the plane starts at the beginning */
+      scroll-margin-top: max(8px, calc((100vh - 64px - var(--edu-h)) / 2));
+    }
+    .js .education.is-scrubbed .edu-stage {
+      position: sticky;
+      top: max(72px, calc(64px + (100vh - 64px - var(--edu-h)) / 2));
+    }
+    .js .edu-trail { stroke-dashoffset: 1; }        /* path starts undrawn */
+    .js .edu-plane { opacity: 0; }                  /* shown once placed at the start */
+    .js .edu-plane.is-ready { opacity: 1; }
+
+    /* stops after the first wait for the plane */
+    .js .edu-stop:not(.hs) .edu-dot {
+      transform: scale(0);
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .js .edu-stop:not(.hs) .edu-card-wrap {
+      opacity: 0;
+      transform: translateY(-14px) rotate(calc(var(--card-rot) - 6deg));
+      transition: opacity 0.45s ease-out, transform 0.6s var(--ease-out);
+    }
+    .js .edu-stop.is-reached .edu-dot { transform: scale(1); }
+    .js .edu-stop.is-reached .edu-card-wrap { opacity: 1; transform: rotate(var(--card-rot)); }
+  }
+
+  /* ---------- Education (phones): stops fade in one by one ---------- */
+  @media (max-width: 767px) {
+    .js .edu-stop {
+      opacity: 0;
+      transform: translateY(var(--reveal-y));
+      transition: opacity 0.6s ease-out, transform 0.8s var(--ease-out);
+    }
+    .js .edu-stop.is-in { opacity: 1; transform: none; }
+  }
+
+  /* ---------- Projects: thumbnail lifts on hover ---------- */
+  .project .thumb { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+  .project:hover .thumb {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 24px rgba(14, 42, 47, 0.12);
+  }
+}

@@ -1,0 +1,21 @@
+# Search engines (Google, Bing, …) may fetch the page only so they can read its
+# "noindex" tag and leave it out of results. Blocking them here would hide that tag,
+# and the bare link could still show up in search.
+User-agent: *
+Allow: /
+
+# AI crawlers that collect pages for training or AI answers: not allowed anywhere
+User-agent: GPTBot
+User-agent: ChatGPT-User
+User-agent: OAI-SearchBot
+User-agent: ClaudeBot
+User-agent: Claude-Web
+User-agent: anthropic-ai
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: CCBot
+User-agent: PerplexityBot
+User-agent: Bytespider
+User-agent: Meta-ExternalAgent
+User-agent: Amazonbot
+Disallow: /
