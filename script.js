@@ -335,17 +335,18 @@ document.addEventListener('click', (e) => {
   glideTo(Math.max(0, targetY)); // the address bar keeps no #section, so reopening starts at the top
 });
 
-/* ---------- Phones: Skills and Projects scroll freely; snapping comes back at their start and end ---------- */
+/* ---------- Phones: Skills and Projects scroll freely; snapping comes back at their start and at the next section ---------- */
 const phoneLayout = window.matchMedia('(max-width: 767px)');
 const freeSections = [document.getElementById('skills'), document.getElementById('projects')];
 let freeTicking = false;
 
 function updateFreeScroll() {
   freeTicking = false;
-  // free while the section's top is above the navbar and its bottom is below the screen
+  // free from the moment the section sits at its start (so a swipe from the title never switches
+  // modes mid-gesture) until the next section fills over half the screen; snapping then takes over
   const inside = phoneLayout.matches && freeSections.some((section) => {
     const rect = section.getBoundingClientRect();
-    return rect.top < navOffset - 8 && rect.bottom > window.innerHeight + 8;
+    return rect.top <= navOffset + 1 && rect.bottom > window.innerHeight * 0.5;
   });
   document.documentElement.classList.toggle('free-scroll', inside);
 }

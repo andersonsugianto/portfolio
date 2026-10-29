@@ -886,10 +886,9 @@ body.menu-open { overflow: hidden; }
   }
 
   /* Phones: snap page by page like desktop. Inside Skills and Projects, script.js adds .free-scroll
-     so the cards scroll freely; their last card is a stop too, so you land on its end before moving on */
+     so the cards scroll freely with no pull at all */
   html { scroll-snap-type: y mandatory; }
   html.free-scroll { scroll-snap-type: none; }
-  .skill-cards > :last-child, .project-list > :last-child { scroll-snap-align: end; scroll-margin-bottom: 40px; }
 
   /* Anything cut off by the top or bottom of the screen fades out (set by script.js) */
   .js .is-off { opacity: 0 !important; transition: opacity 0.35s ease !important; }
