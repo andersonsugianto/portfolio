@@ -15,7 +15,6 @@
 
   --font-serif: "Instrument Serif", Georgia, serif;
   --font-sans: "DM Sans", system-ui, sans-serif;
-  --font-hand: "Caveat", cursive;
 
   /* Size of small UI text relative to the Figma design (1 = Figma size) */
   --s: 0.8;
@@ -30,7 +29,7 @@ html {
   overflow-x: clip;
   scroll-padding-top: 64px; /* anchor links (and snap points) land right below the fixed 64px navbar */
   /* Each section is a resting point: a small scroll springs back, a firmer one moves on.
-     Taller sections (pinned Education) still scroll freely inside; on phones Skills and Projects scroll freely (see the phone block). */
+     Taller sections (pinned Education) still scroll freely inside. Phones don't snap (see the phone block). */
   scroll-snap-type: y mandatory;
 }
 .main > section { scroll-snap-align: start; }
@@ -148,7 +147,8 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 .btn-outline { border: 1px solid var(--text-primary); }
 /* Hover (and keyboard focus): underlined text */
 .btn:hover,
-.btn:focus-visible {
+.btn:focus-visible,
+.btn.is-active { /* Contact Me while the Contact section is on screen (set by script.js) */
   text-decoration: underline;
   text-decoration-thickness: 1.5px;
   text-underline-offset: 0.2em;
@@ -169,6 +169,9 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
   padding-block: clamp(32px, 4vw, 56px);
   --u: calc(100cqw / 1200); /* one "design pixel" at full 1200px content width (shrinks with the container) */
 }
+/* Contact and the footer share the last screen, so the contact content sits centred between the
+   navbar and the footer (65px = the footer: its line plus the 64px bar) */
+.main > .contact { min-height: calc(100vh - 64px - 65px); }
 
 /* Section headings */
 .section-title {
@@ -574,6 +577,7 @@ body.modal-open { overflow: hidden; }
   padding: 0 var(--pad) 32px;
   background: var(--bg-page);
   overflow-y: auto;
+  overscroll-behavior: contain; /* swipes on the menu never pass through to the page */
 }
 .menu-links { display: flex; flex-direction: column; }
 .menu-links a {
@@ -606,7 +610,6 @@ body.modal-open { overflow: hidden; }
   font-weight: 600;
 }
 .menu-socials a { text-decoration: underline; }
-body.menu-open { overflow: hidden; }
 
 /* =========================================================
    768px AND UP — education drawn along the dotted path
@@ -742,10 +745,17 @@ body.menu-open { overflow: hidden; }
   .section-title { font-size: calc(44px * var(--s)); }
   .education, .skills, .projects, .contact { gap: 32px; }
 
-  /* Each section is at least one screen tall (measured with Safari's toolbars hidden, the tallest the
-     screen gets), so the next section's title always starts below the bottom edge.
-     Content is centred in that space; the hero below uses the smaller screen so its photo always fits. */
-  .main > section { min-height: calc(100lvh - 64px); padding-block: 40px; }
+  /* Phones scroll freely (no snapping), so sections are only as tall as their content */
+  .main > section { min-height: 0; padding-block: 48px; }
+  /* Contact + footer fill the last screen, with the title and card centred between the navbar and the
+     footer: equal space above and below. dvh follows Safari's toolbars as they slide in and out, so it
+     stays centred either way (svh is the fallback for older browsers) */
+  .main > .contact {
+    min-height: calc(100svh - 64px - 65px);
+    min-height: calc(100dvh - 64px - 65px);
+    padding-block: 32px;
+    justify-content: center;
+  }
 
   /* Hero: text on top, photo below. It fills the first screen (with the browser's toolbars showing)
      and centres its content, so the About title only appears once you start scrolling */
@@ -885,13 +895,8 @@ body.menu-open { overflow: hidden; }
     padding: 8px 4px;
   }
 
-  /* Phones: snap page by page like desktop. Inside Skills and Projects, script.js adds .free-scroll
-     so the cards scroll freely with no pull at all */
-  html { scroll-snap-type: y mandatory; }
-  html.free-scroll { scroll-snap-type: none; }
-
-  /* Anything cut off by the top or bottom of the screen fades out (set by script.js) */
-  .js .is-off { opacity: 0 !important; transition: opacity 0.35s ease !important; }
+  /* Phones: no snapping, plain native scrolling (Safari's snapping was unreliable on iPhone) */
+  html { scroll-snap-type: none; }
 
   /* Project photo card: smaller on phones */
   .project-modal { width: min(320px, calc(100% - 2 * var(--pad))); border-radius: 20px; }
@@ -1020,4 +1025,22 @@ body.menu-open { overflow: hidden; }
     transform: translateY(-4px);
     box-shadow: 0 10px 24px rgba(14, 42, 47, 0.12);
   }
+}
+
+/* ---------- Phones: fade in / fade out ----------
+   Each block fades (and drifts) in once it's properly on screen, and fades out again when it leaves:
+   upward when it scrolls away under the navbar, downward when it drops back below the bottom.
+   Anything in the bottom 16% of the screen counts as "not yet here", so the next section's title stays
+   hidden while you're still reading this one. script.js adds .fade-block and toggles .is-shown / .is-above.
+   Desktop is untouched. (.main in the selectors outranks the general reveal rules above.) */
+@media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
+  .js .main .fade-block {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.6s ease, transform 0.7s var(--ease-out);
+  }
+  .js .main .fade-block.is-above { transform: translateY(-28px); }
+  .js .main .fade-block.is-shown { opacity: 1; transform: none; }
+  /* the school cards fade in with their timeline as one group, not one by one */
+  .js .main .edu-stop { opacity: 1; transform: none; transition: none; }
 }

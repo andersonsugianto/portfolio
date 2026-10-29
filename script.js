@@ -1,7 +1,4 @@
-// Always open on the hero: no restoring the last scroll spot on reload/back,
-// and no jumping to an old #section left in the address
-if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+// Always open on the hero (scroll restoration and the #section are already turned off in <head>)
 window.scrollTo(0, 0);
 // once images and the Education layout have settled, make sure snapping hasn't moved us
 // (unless the visitor already started scrolling on a slow connection)
@@ -17,8 +14,13 @@ const openBtn = document.querySelector('[data-menu-open]');
 function setMenu(open) {
   menu.hidden = !open;
   openBtn.setAttribute('aria-expanded', String(open));
-  document.body.classList.toggle('menu-open', open);
 }
+// While the menu is open, swipes on it never reach the page underneath (so the page can't scroll or
+// snap behind it). Done by cancelling the swipe instead of switching the page's scrolling off and on,
+// which makes iPhone Safari jolt the page when the menu closes.
+menu.addEventListener('touchmove', (e) => {
+  if (menu.scrollHeight <= menu.clientHeight) e.preventDefault(); // the menu itself has nothing to scroll
+}, { passive: false });
 
 openBtn.addEventListener('click', () => setMenu(true));
 menu.querySelectorAll('[data-menu-close]').forEach((el) => {
@@ -34,10 +36,13 @@ window.matchMedia('(min-width: 768px)').addEventListener('change', (e) => {
 
 // Underline the nav link for the section currently on screen.
 // A section counts as current once its top passes 40% of the way down the window;
-// the hero (before About) and Contact (after Projects) leave no link underlined.
+// the hero (before About) leaves no link underlined; on Contact the "Contact Me" button is underlined
+// (in the navbar on desktop, in the menu on phones).
 const navSections = ['about', 'education', 'skills', 'projects', 'contact']
   .map((id) => document.getElementById(id));
-const sectionLinks = document.querySelectorAll('.nav-links a, .menu-links a');
+const sectionLinks = document.querySelectorAll(
+  '.nav-links a, .menu-links a, .page > .nav .btn[href="#contact"], .menu-buttons .btn[href="#contact"]'
+);
 
 function updateActiveLink() {
   const line = window.innerHeight * 0.4;
@@ -48,7 +53,10 @@ function updateActiveLink() {
   });
 }
 
-window.addEventListener('scroll', updateActiveLink, { passive: true });
+let linkTicking = false;
+window.addEventListener('scroll', () => {
+  if (!linkTicking) { linkTicking = true; requestAnimationFrame(() => { linkTicking = false; updateActiveLink(); }); }
+}, { passive: true });
 window.addEventListener('resize', updateActiveLink);
 updateActiveLink();
 
@@ -138,27 +146,26 @@ function initReveals() {
   document.querySelectorAll('[data-reveal-group]').forEach((group) => observer.observe(group));
 }
 
-/* ---------- Phones: fade out blocks that are cut off at the top or bottom of the screen ----------
-   A block shows while almost all of it (or half the screen, for very tall ones) is in view
-   below the navbar, so a title cut off at the bottom stays hidden until you scroll to it.
-   Skill cards and projects always stay visible, since those sections scroll freely through them. */
-function initEdgeFade() {
-  const phone = window.matchMedia('(max-width: 767px)');
+/* ---------- Phones: fade blocks in and out (styles in styles.css) ----------
+   A block counts as on screen while most of it (or half the screen, for very tall ones) sits between the
+   navbar and the bottom 16% of the screen. */
+function initPhoneFade() {
   const blocks = document.querySelectorAll(
     '.hero .intro, .polaroid-wrap, .section-title, .passport-wrap, .about-text p, ' +
-    '.edu-stop, .contact-panel'
+    '.timeline, .skill-cards, .project-list, .contact-panel' // each section's cards fade in together
   );
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
-      const shown = entry.intersectionRatio >= 0.9 ||
+      const shown = entry.intersectionRatio >= 0.6 ||
         entry.intersectionRect.height >= entry.rootBounds.height * 0.5;
-      entry.target.classList.toggle('is-off', phone.matches && !shown);
+      entry.target.classList.toggle('is-shown', shown);
+      // gone off the top: fade out upwards; otherwise (below the screen) it rises when it comes back
+      entry.target.classList.toggle('is-above', !shown && entry.boundingClientRect.top < entry.rootBounds.top);
     });
-  }, { rootMargin: '-64px 0px 0px 0px', threshold: [0, 0.25, 0.5, 0.75, 0.9, 1] });
-  blocks.forEach((block) => observer.observe(block));
-  // leaving phone width: show everything again
-  phone.addEventListener('change', () => {
-    if (!phone.matches) blocks.forEach((block) => block.classList.remove('is-off'));
+  }, { rootMargin: '-64px 0px -16% 0px', threshold: [0, 0.2, 0.4, 0.6, 0.8, 1] });
+  blocks.forEach((block) => {
+    block.classList.add('fade-block');
+    observer.observe(block);
   });
 }
 
@@ -208,7 +215,12 @@ function initEducation() {
   const lerpAngle = (a, b, t) => a + (((b - a + 540) % 360) - 180) * t;
 
   function update() {
-    if (!desktopLayout.matches) return;
+    // phones: the stacked timeline has no plane, so skip all the measuring
+    if (!desktopLayout.matches) { section.classList.remove('is-scrubbed'); return; }
+    // Pin the timeline only when it fits on screen below the navbar (not on a phone held sideways);
+    // otherwise it scrolls like a normal section and shows the finished timeline
+    const pinned = stage.offsetHeight <= window.innerHeight - 64 - 8;
+    section.classList.toggle('is-scrubbed', pinned);
 
     // Scroll progress through the pinned stage, 0 → 1
     const rect = section.getBoundingClientRect();
@@ -216,7 +228,7 @@ function initEducation() {
     // The last half-screen of the track is a pause on the finished timeline (time to read)
     const hold = window.innerHeight * 0.5;
     const range = rect.height - stage.offsetHeight - hold;
-    const progress = range > 0 ? Math.min(Math.max((stickyTop - rect.top) / range, 0), 1) : 1;
+    const progress = !pinned ? 1 : range > 0 ? Math.min(Math.max((stickyTop - rect.top) / range, 0), 1) : 1;
 
     // Position on the path, and the path's direction there
     const t = Math.min(progress / TRAVEL, 1);
@@ -246,10 +258,12 @@ function initEducation() {
     });
   }
 
-  section.classList.add('is-scrubbed'); // makes the section a scroll track with a pinned stage
-  update();
+  update(); // adds .is-scrubbed (a scroll track with a pinned stage) when the timeline fits
   plane.classList.add('is-ready');
-  window.addEventListener('scroll', update, { passive: true });
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (!ticking) { ticking = true; requestAnimationFrame(() => { ticking = false; update(); }); }
+  }, { passive: true });
   window.addEventListener('resize', update);
   desktopLayout.addEventListener('change', update);
 }
@@ -257,7 +271,7 @@ function initEducation() {
 initHeroTyping();
 initReveals();
 initEducation();
-initEdgeFade();
+initPhoneFade();
 
 // No zooming: iPhone Safari ignores user-scalable=no in the viewport tag, so block its pinch gesture too
 document.addEventListener('gesturestart', (e) => e.preventDefault());
@@ -305,53 +319,85 @@ document.fonts.ready.then(fitSkills); // re-measure once the web fonts have load
 
 /* ---------- Section links glide there (a little slower than the browser's built-in smooth scroll) ---------- */
 const navOffset = 64; // height of the fixed navbar
+let gliding = false;
+let glideFrame;
+const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
-function glideTo(targetY) {
+// A calm glide that speeds up and slows down (section and menu links)
+// onDone: called when the glide has finished (not when a touch interrupts it)
+function glideTo(targetY, onDone) {
   const root = document.documentElement;
   const startY = window.scrollY;
   const distance = targetY - startY;
   const duration = Math.min(1800, 500 + Math.abs(distance) * 0.25); // longer trips take a bit longer
-  const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
   const start = performance.now();
 
+  cancelAnimationFrame(glideFrame);
   root.style.scrollSnapType = 'none'; // snapping would fight the glide; restored when it ends
+  gliding = true;
   function step(now) {
     const t = Math.min((now - start) / duration, 1);
     window.scrollTo(0, startY + distance * easeInOut(t));
-    if (t < 1) requestAnimationFrame(step);
-    else root.style.scrollSnapType = '';
+    if (t < 1) glideFrame = requestAnimationFrame(step);
+    else { stopGlide(targetY); if (onDone) onDone(); }
   }
-  requestAnimationFrame(step);
+  glideFrame = requestAnimationFrame(step);
 }
+
+// landedAt: where the glide finished. Safari can re-lock onto the section you *started* from when
+// snapping is switched back on, so once it's back on, scroll to the landing spot again to make it stick.
+function stopGlide(landedAt) {
+  const root = document.documentElement;
+  cancelAnimationFrame(glideFrame);
+  root.style.scrollSnapType = '';
+  gliding = false;
+  if (landedAt === undefined) return; // interrupted by a touch: leave the page where the finger took over
+  void getComputedStyle(root).scrollSnapType; // apply the restored snapping first
+  window.scrollTo(0, landedAt);
+  setTimeout(() => {
+    if (!gliding && Math.abs(window.scrollY - landedAt) > 2) window.scrollTo(0, landedAt);
+  }, 120);
+}
+// a finger on the screen (or a mouse wheel) takes over from any glide straight away
+window.addEventListener('touchstart', () => { if (gliding) stopGlide(); }, { passive: true });
+window.addEventListener('wheel', () => { if (gliding) stopGlide(); }, { passive: true });
+
+// Where a section link should land
+function linkTarget(target) {
+  const margin = parseFloat(getComputedStyle(target).scrollMarginTop) || 0; // e.g. Education's pin offset
+  const rect = target.getBoundingClientRect();
+  let targetY = rect.top + window.scrollY - navOffset - margin;
+  // phones: centre the section's content in the screen below the navbar (when it fits)
+  if (window.matchMedia('(max-width: 767px)').matches) {
+    const style = getComputedStyle(target);
+    const contentTop = rect.top + parseFloat(style.paddingTop);
+    const contentHeight = rect.height - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+    const room = window.innerHeight - navOffset;
+    if (contentHeight < room) targetY = window.scrollY + contentTop - navOffset - (room - contentHeight) / 2;
+  }
+  // Contact: go to the very bottom, so the footer shows too (the contact content is centred above it)
+  if (target.id === 'contact') targetY = document.documentElement.scrollHeight - window.innerHeight;
+  if (target.id === 'top') targetY = 0;
+  return Math.max(0, Math.min(targetY, document.documentElement.scrollHeight - window.innerHeight));
+}
+
+let touchedAt = 0;
+window.addEventListener('touchstart', () => { touchedAt = performance.now(); }, { passive: true });
 
 document.addEventListener('click', (e) => {
   const link = e.target.closest('a[href^="#"]');
   if (!link || reduceMotion) return;                  // reduced motion: let the browser jump there
   const target = document.querySelector(link.getAttribute('href'));
   if (!target) return;
-  e.preventDefault();
-  const margin = parseFloat(getComputedStyle(target).scrollMarginTop) || 0; // e.g. Education's pin offset
-  const targetY = target.id === 'top' ? 0 : target.getBoundingClientRect().top + window.scrollY - navOffset - margin;
-  glideTo(Math.max(0, targetY)); // the address bar keeps no #section, so reopening starts at the top
-});
-
-/* ---------- Phones: Skills and Projects scroll freely; snapping comes back at their start and at the next section ---------- */
-const phoneLayout = window.matchMedia('(max-width: 767px)');
-const freeSections = [document.getElementById('skills'), document.getElementById('projects')];
-let freeTicking = false;
-
-function updateFreeScroll() {
-  freeTicking = false;
-  // free from the moment the section sits at its start (so a swipe from the title never switches
-  // modes mid-gesture) until the next section fills over half the screen; snapping then takes over
-  const inside = phoneLayout.matches && freeSections.some((section) => {
-    const rect = section.getBoundingClientRect();
-    return rect.top <= navOffset + 1 && rect.bottom > window.innerHeight * 0.5;
+  e.preventDefault(); // the address bar keeps no #section, so reopening starts at the top
+  const startedAt = performance.now();
+  glideTo(linkTarget(target), () => {
+    // iPhone Safari's toolbars often slide in or out during the glide, changing the screen height after
+    // the landing spot was worked out; once they've settled, nudge the section back to the centre
+    setTimeout(() => {
+      if (touchedAt > startedAt || gliding) return; // the visitor has taken over
+      const y = linkTarget(target);
+      if (Math.abs(y - window.scrollY) > 6) glideTo(y);
+    }, 350);
   });
-  document.documentElement.classList.toggle('free-scroll', inside);
-}
-window.addEventListener('scroll', () => {
-  if (!freeTicking) { freeTicking = true; requestAnimationFrame(updateFreeScroll); }
-}, { passive: true });
-phoneLayout.addEventListener('change', updateFreeScroll);
-updateFreeScroll();
+});

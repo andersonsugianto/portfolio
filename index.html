@@ -9,10 +9,16 @@
   <meta name="description" content="Anderson Sugianto — Computer Science student at Sunway University.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=55">
-  <!-- Lets the CSS hide elements before their entrance animations (only when JS is running) -->
-  <script>document.documentElement.classList.add('js');</script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=block" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=83">
+  <!-- Runs before anything is drawn: the page always opens at the top (no restoring the last scroll spot on a
+       refresh, no jumping to an old #section in the address), and the CSS can hide elements before their
+       entrance animations (only when JS is running) -->
+  <script>
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    document.documentElement.classList.add('js');
+  </script>
 </head>
 <body>
   <div class="page" id="top">
@@ -92,7 +98,7 @@
       <!-- About -->
       <section class="about" id="about" data-reveal-group>
         <div class="passport-wrap" data-reveal="left">
-          <img class="passport" src="assets/passport.png?v=2" alt="Passport-style illustration">
+          <img class="passport" src="assets/passport.png?v=2" alt="Passport-style illustration" loading="lazy" decoding="async">
         </div>
 
         <div class="about-text">
@@ -349,6 +355,6 @@
     </div>
   </dialog>
 
-  <script src="script.js?v=22"></script>
+  <script src="script.js?v=55"></script>
 </body>
 </html>
