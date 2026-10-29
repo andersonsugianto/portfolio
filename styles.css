@@ -742,8 +742,10 @@ body.menu-open { overflow: hidden; }
   .section-title { font-size: calc(44px * var(--s)); }
   .education, .skills, .projects, .contact { gap: 32px; }
 
-  /* Each section is at least one screen (with the browser's toolbars showing), so every snap stop is a page */
-  .main > section { min-height: calc(100svh - 64px); padding-block: 40px; }
+  /* Each section is at least one screen tall (measured with Safari's toolbars hidden, the tallest the
+     screen gets), so the next section's title always starts below the bottom edge.
+     Content is centred in that space; the hero below uses the smaller screen so its photo always fits. */
+  .main > section { min-height: calc(100lvh - 64px); padding-block: 40px; }
 
   /* Hero: text on top, photo below. It fills the first screen (with the browser's toolbars showing)
      and centres its content, so the About title only appears once you start scrolling */
@@ -888,9 +890,6 @@ body.menu-open { overflow: hidden; }
   html { scroll-snap-type: y mandatory; }
   html.free-scroll { scroll-snap-type: none; }
   .skill-cards > :last-child, .project-list > :last-child { scroll-snap-align: end; scroll-margin-bottom: 40px; }
-  /* a buffer of empty space under the last card: a gentle scroll past it springs back to the card,
-     and only a firmer swipe carries on to the next section */
-  .main > .skills, .main > .projects { padding-bottom: 25svh; }
 
   /* Anything cut off by the top or bottom of the screen fades out (set by script.js) */
   .js .is-off { opacity: 0 !important; transition: opacity 0.35s ease !important; }

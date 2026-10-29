@@ -139,21 +139,22 @@ function initReveals() {
 }
 
 /* ---------- Phones: fade out blocks that are cut off at the top or bottom of the screen ----------
-   A block shows while at least half of it (or half the screen, for very tall ones) is in view
-   below the navbar, so only the part of the page you've snapped to is visible. */
+   A block shows while almost all of it (or half the screen, for very tall ones) is in view
+   below the navbar, so a title cut off at the bottom stays hidden until you scroll to it.
+   Skill cards and projects always stay visible, since those sections scroll freely through them. */
 function initEdgeFade() {
   const phone = window.matchMedia('(max-width: 767px)');
   const blocks = document.querySelectorAll(
     '.hero .intro, .polaroid-wrap, .section-title, .passport-wrap, .about-text p, ' +
-    '.edu-stop, .skill-cards .card, .project, .contact-panel'
+    '.edu-stop, .contact-panel'
   );
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
-      const shown = entry.intersectionRatio >= 0.5 ||
+      const shown = entry.intersectionRatio >= 0.9 ||
         entry.intersectionRect.height >= entry.rootBounds.height * 0.5;
       entry.target.classList.toggle('is-off', phone.matches && !shown);
     });
-  }, { rootMargin: '-64px 0px 0px 0px', threshold: [0, 0.25, 0.5, 0.75, 1] });
+  }, { rootMargin: '-64px 0px 0px 0px', threshold: [0, 0.25, 0.5, 0.75, 0.9, 1] });
   blocks.forEach((block) => observer.observe(block));
   // leaving phone width: show everything again
   phone.addEventListener('change', () => {
