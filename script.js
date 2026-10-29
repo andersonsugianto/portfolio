@@ -147,22 +147,27 @@ function initReveals() {
 }
 
 /* ---------- Phones: fade blocks in and out (styles in styles.css) ----------
-   A block counts as on screen while most of it (or half the screen, for very tall ones) sits between the
-   navbar and the bottom 16% of the screen. */
+   A block counts as on screen while half of it (or, for tall groups like the skill cards, at least 100px
+   of it) sits between the navbar and the bottom 16% of the screen. */
 function initPhoneFade() {
+  if (reduceMotion) return; // the CSS only applies with motion allowed, so nothing to watch
   const blocks = document.querySelectorAll(
     '.hero .intro, .polaroid-wrap, .section-title, .passport-wrap, .about-text p, ' +
     '.timeline, .skill-cards, .project-list, .contact-panel' // each section's cards fade in together
   );
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
-      const shown = entry.intersectionRatio >= 0.6 ||
-        entry.intersectionRect.height >= entry.rootBounds.height * 0.5;
+      const shown = entry.intersectionRatio >= 0.5 ||
+        entry.intersectionRect.height >= Math.min(100, entry.rootBounds.height * 0.5);
       entry.target.classList.toggle('is-shown', shown);
       // gone off the top: fade out upwards; otherwise (below the screen) it rises when it comes back
       entry.target.classList.toggle('is-above', !shown && entry.boundingClientRect.top < entry.rootBounds.top);
     });
-  }, { rootMargin: '-64px 0px -16% 0px', threshold: [0, 0.2, 0.4, 0.6, 0.8, 1] });
+  }, {
+    rootMargin: '-64px 0px -16% 0px',
+    // fine steps, so tall groups are checked often enough to catch their first 100px
+    threshold: Array.from({ length: 21 }, (_, i) => i / 20).concat([0.02, 0.04, 0.06, 0.08]),
+  });
   blocks.forEach((block) => {
     block.classList.add('fade-block');
     observer.observe(block);
@@ -180,13 +185,8 @@ function initEducation() {
   const plane = section.querySelector('.edu-plane');
   const stops = [...section.querySelectorAll('.edu-stop')];
 
-  // Phones: the timeline is stacked, so each stop fades in as it scrolls into view (and out again once gone)
-  const stopObserver = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => entry.target.classList.toggle('is-in', entry.isIntersecting));
-  }, { rootMargin: '0px 0px -12% 0px' });
-  stops.forEach((stop) => stopObserver.observe(stop));
-
-  // Desktop/tablet: everything below is in the SVG's 1280×748 Figma coordinates
+  // Desktop/tablet only (phones show the stacked timeline, faded in by initPhoneFade):
+  // everything below is in the SVG's 1280×748 Figma coordinates
   const PATH_OFFSET = { x: 7.8, y: 318.9 };          // where the dotted path sits in the artwork
   const PLANE_REST = { x: 1239.1, y: 278.8, angle: -8 }; // resting spot from the design
   const NOSE_ANGLE = Math.atan2(-30, 66) * 180 / Math.PI; // the drawing's nose points up-right

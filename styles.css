@@ -1009,16 +1009,6 @@ body.modal-open { overflow: hidden; }
     .js .edu-stop.is-reached .edu-card-wrap { opacity: 1; transform: rotate(var(--card-rot)); }
   }
 
-  /* ---------- Education (phones): stops fade in one by one ---------- */
-  @media (max-width: 767px) {
-    .js .edu-stop {
-      opacity: 0;
-      transform: translateY(var(--reveal-y));
-      transition: opacity 0.6s ease-out, transform 0.8s var(--ease-out);
-    }
-    .js .edu-stop.is-in { opacity: 1; transform: none; }
-  }
-
   /* ---------- Projects: thumbnail lifts on hover ---------- */
   .project .thumb { transition: transform 0.25s ease, box-shadow 0.25s ease; }
   .project:hover .thumb {
@@ -1037,10 +1027,8 @@ body.modal-open { overflow: hidden; }
   .js .main .fade-block {
     opacity: 0;
     transform: translateY(28px);
-    transition: opacity 0.6s ease, transform 0.7s var(--ease-out);
+    transition: opacity 0.35s ease, transform 0.45s var(--ease-out);
   }
   .js .main .fade-block.is-above { transform: translateY(-28px); }
   .js .main .fade-block.is-shown { opacity: 1; transform: none; }
-  /* the school cards fade in with their timeline as one group, not one by one */
-  .js .main .edu-stop { opacity: 1; transform: none; transition: none; }
 }
