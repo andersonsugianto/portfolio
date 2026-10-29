@@ -114,7 +114,7 @@ function initHeroTyping() {
   setTimeout(typeNext, 400);
 }
 
-/* ---------- 2. About, Skills, Projects: reveal once when 20% is in view ---------- */
+/* ---------- 2. About, Skills, Projects, Contact: reveal on the way in, hide again once fully out of view ---------- */
 function initReveals() {
   // Stagger the cards in each group, and the chips / language dots inside each card
   document.querySelectorAll('[data-reveal-group]').forEach((group) => {
@@ -129,15 +129,36 @@ function initReveals() {
 
   if (reduceMotion) return;
 
+  // shows once its top is 12% up from the bottom of the screen; hides again when it has left the
+  // screen completely, so it plays again (out of sight) the next time you scroll to it
   const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (!entry.isIntersecting) return;
-      entry.target.classList.add('is-in');
-      observer.unobserve(entry.target); // play once
-    });
-  }, { threshold: 0.2 });
+    entries.forEach((entry) => entry.target.classList.toggle('is-in', entry.isIntersecting));
+  }, { rootMargin: '0px 0px -12% 0px' });
 
   document.querySelectorAll('[data-reveal-group]').forEach((group) => observer.observe(group));
+}
+
+/* ---------- Phones: fade out blocks that are cut off at the top or bottom of the screen ----------
+   A block shows while at least half of it (or half the screen, for very tall ones) is in view
+   below the navbar, so only the part of the page you've snapped to is visible. */
+function initEdgeFade() {
+  const phone = window.matchMedia('(max-width: 767px)');
+  const blocks = document.querySelectorAll(
+    '.hero .intro, .polaroid-wrap, .section-title, .passport-wrap, .about-text p, ' +
+    '.edu-stop, .skill-cards .card, .project, .contact-panel'
+  );
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      const shown = entry.intersectionRatio >= 0.5 ||
+        entry.intersectionRect.height >= entry.rootBounds.height * 0.5;
+      entry.target.classList.toggle('is-off', phone.matches && !shown);
+    });
+  }, { rootMargin: '-64px 0px 0px 0px', threshold: [0, 0.25, 0.5, 0.75, 1] });
+  blocks.forEach((block) => observer.observe(block));
+  // leaving phone width: show everything again
+  phone.addEventListener('change', () => {
+    if (!phone.matches) blocks.forEach((block) => block.classList.remove('is-off'));
+  });
 }
 
 /* ---------- 3. Education: plane flies along the dotted path as you scroll ---------- */
@@ -151,14 +172,10 @@ function initEducation() {
   const plane = section.querySelector('.edu-plane');
   const stops = [...section.querySelectorAll('.edu-stop')];
 
-  // Phones: the timeline is stacked, so each stop simply fades in when it scrolls into view
+  // Phones: the timeline is stacked, so each stop fades in as it scrolls into view (and out again once gone)
   const stopObserver = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (!entry.isIntersecting) return;
-      entry.target.classList.add('is-in');
-      stopObserver.unobserve(entry.target);
-    });
-  }, { threshold: 0.25 });
+    entries.forEach((entry) => entry.target.classList.toggle('is-in', entry.isIntersecting));
+  }, { rootMargin: '0px 0px -12% 0px' });
   stops.forEach((stop) => stopObserver.observe(stop));
 
   // Desktop/tablet: everything below is in the SVG's 1280×748 Figma coordinates
@@ -239,6 +256,7 @@ function initEducation() {
 initHeroTyping();
 initReveals();
 initEducation();
+initEdgeFade();
 
 // No zooming: iPhone Safari ignores user-scalable=no in the viewport tag, so block its pinch gesture too
 document.addEventListener('gesturestart', (e) => e.preventDefault());
@@ -315,3 +333,23 @@ document.addEventListener('click', (e) => {
   const targetY = target.id === 'top' ? 0 : target.getBoundingClientRect().top + window.scrollY - navOffset - margin;
   glideTo(Math.max(0, targetY)); // the address bar keeps no #section, so reopening starts at the top
 });
+
+/* ---------- Phones: Skills and Projects scroll freely; snapping comes back at their start and end ---------- */
+const phoneLayout = window.matchMedia('(max-width: 767px)');
+const freeSections = [document.getElementById('skills'), document.getElementById('projects')];
+let freeTicking = false;
+
+function updateFreeScroll() {
+  freeTicking = false;
+  // free while the section's top is above the navbar and its bottom is below the screen
+  const inside = phoneLayout.matches && freeSections.some((section) => {
+    const rect = section.getBoundingClientRect();
+    return rect.top < navOffset - 8 && rect.bottom > window.innerHeight + 8;
+  });
+  document.documentElement.classList.toggle('free-scroll', inside);
+}
+window.addEventListener('scroll', () => {
+  if (!freeTicking) { freeTicking = true; requestAnimationFrame(updateFreeScroll); }
+}, { passive: true });
+phoneLayout.addEventListener('change', updateFreeScroll);
+updateFreeScroll();
