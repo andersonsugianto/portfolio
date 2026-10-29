@@ -30,7 +30,7 @@ html {
   overflow-x: clip;
   scroll-padding-top: 64px; /* anchor links (and snap points) land right below the fixed 64px navbar */
   /* Each section is a resting point: a small scroll springs back, a firmer one moves on.
-     Sections taller than the window (pinned Education, stacked Skills on phones) still scroll freely inside. */
+     Taller sections (pinned Education) still scroll freely inside; phones use a softer snap (see the phone block). */
   scroll-snap-type: y mandatory;
 }
 .main > section { scroll-snap-align: start; }
@@ -164,7 +164,8 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
    so only one section is in view at a time (taller sections simply grow) */
 .main > section {
   min-height: calc(100vh - 64px);
-  min-height: calc(100svh - 64px);
+  /* the screen with the browser's toolbars hidden, so the next section's title never peeks in at the bottom */
+  min-height: calc(100lvh - 64px);
   padding-block: clamp(32px, 4vw, 56px);
   --u: calc(100cqw / 1200); /* one "design pixel" at full 1200px content width (shrinks with the container) */
 }
@@ -287,7 +288,7 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
   flex-direction: column;
   border-radius: 25px;
   background: var(--bg-surface);
-  filter: drop-shadow(5px 5px 15px rgba(0, 0, 0, 0.25));
+  box-shadow: 5px 5px 30px rgba(0, 0, 0, 0.25);
 }
 .edu-card.teal { background: var(--tint-teal); }
 .edu-date {
@@ -865,16 +866,21 @@ body.menu-open { overflow: hidden; }
   .thumb { aspect-ratio: auto; height: calc(300px * var(--s)); border-radius: 20px; }
   .project-info { margin-top: 0; }
 
-  /* Contact: one contact row per line */
-  .contact-panel { gap: 24px; padding: 24px; }
+  /* Contact: one contact row per line, compact so the section and the footer fit on one screen */
+  .main > .contact { min-height: calc(100lvh - 64px - 65px); } /* 65px = footer (divider + 64px bar) */
+  .contact-panel { gap: 20px; padding: 20px; }
   .invite-buttons { gap: 10px; }
-  .contact-cards { grid-template-columns: 1fr; gap: 12px; }
+  .contact-cards { grid-template-columns: 1fr; gap: 4px; }
   .contact-card {
     flex-direction: row;
     align-items: center;
     gap: 14px;
-    padding: 16px;
+    padding: 8px 4px;
   }
+
+  /* Phones: sections only snap when you stop close to one, so long sections
+     (Skills, Projects) scroll freely instead of jumping to the next */
+  html { scroll-snap-type: y proximity; }
 
   /* Project photo card: smaller on phones */
   .project-modal { width: min(320px, calc(100% - 2 * var(--pad))); border-radius: 20px; }

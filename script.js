@@ -1,3 +1,15 @@
+// Always open on the hero: no restoring the last scroll spot on reload/back,
+// and no jumping to an old #section left in the address
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+window.scrollTo(0, 0);
+// once images and the Education layout have settled, make sure snapping hasn't moved us
+// (unless the visitor already started scrolling on a slow connection)
+let visitorScrolled = false;
+['wheel', 'touchstart', 'keydown'].forEach((type) =>
+  window.addEventListener(type, () => { visitorScrolled = true; }, { once: true, passive: true }));
+window.addEventListener('load', () => { if (!visitorScrolled) window.scrollTo(0, 0); });
+
 // Mobile menu: open/close the full-screen overlay
 const menu = document.getElementById('menu');
 const openBtn = document.querySelector('[data-menu-open]');
@@ -301,6 +313,5 @@ document.addEventListener('click', (e) => {
   e.preventDefault();
   const margin = parseFloat(getComputedStyle(target).scrollMarginTop) || 0; // e.g. Education's pin offset
   const targetY = target.id === 'top' ? 0 : target.getBoundingClientRect().top + window.scrollY - navOffset - margin;
-  glideTo(Math.max(0, targetY));
-  history.pushState(null, '', link.getAttribute('href'));
+  glideTo(Math.max(0, targetY)); // the address bar keeps no #section, so reopening starts at the top
 });
